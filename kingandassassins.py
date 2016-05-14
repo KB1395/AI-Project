@@ -7,11 +7,11 @@ import argparse
 import json
 import random
 import socket
-from nextto import *
+
 import sys
 
 from lib import game
-
+from moveknights import *
 BUFFER_SIZE = 2048
 
 CARDS = (
@@ -368,6 +368,7 @@ class KingAndAssassinsClient(game.GameClient):
 
                 for i in range(10):
                     for j in range(10):
+
                         if state['people'][i][j] == 'king':
                             self.__actualpos['king'] = dict()
                             self.__actualpos['king']['x'] = i
@@ -391,7 +392,7 @@ class KingAndAssassinsClient(game.GameClient):
                                 self.__actualpos['plebs'][state['people'][i][j]] = dict()
                                 self.__actualpos['plebs'][state['people'][i][j]]['x'] = i
                                 self.__actualpos['plebs'][state['people'][i][j]]['y'] = j
-
+                print(self.__actualpos)
                 for assassin in self.__actualpos['assassins']:
                     assx=self.__actualpos['assassins'][assassin]['x']
                     assy=(self.__actualpos['assassins'][assassin]['y'])
@@ -401,6 +402,20 @@ class KingAndAssassinsClient(game.GameClient):
 
                     if (assy) < kingy:
                         dir='E'
+                        for i in range(10):
+                            for j in range(10):
+                                if state['people'][i][j] in self.assassins_list or state['people'][i][j]=='assassin':
+
+                                    self.__actualpos['assassins']['assassin'+str(iass)] = dict()
+                                    self.__actualpos['assassins']['assassin' + str(iass)]['x'] = i
+                                    self.__actualpos['assassins']['assassin' + str(iass)]['y'] = j
+                                    iass += 1
+                                else:
+                                    if state['people'][i][j]!='king' and state['people'][i][j]!='assassin' and state['people'][i][j]!='knight':
+
+                                        self.__actualpos['plebs'][state['people'][i][j]] = dict()
+                                        self.__actualpos['plebs'][state['people'][i][j]]['x'] = i
+                                        self.__actualpos['plebs'][state['people'][i][j]]['y'] = j
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -421,7 +436,7 @@ class KingAndAssassinsClient(game.GameClient):
                             persony=self.__actualpos['plebs'][person]['y']
 
                             if personx==(assx) and persony==assy+1:
-                                return json.dumps({'actions': [('move',assx ,assy,'S'),('move',assx ,assy,dir)]}, separators=(',', ':'))
+                                return json.dumps({'actions': [('move',assx ,assy,'S'),('move',assx ,assy+1,dir)]}, separators=(',', ':'))
 
 
                         else:
@@ -455,11 +470,12 @@ class KingAndAssassinsClient(game.GameClient):
 
 
                         else:
-                            return json.dumps({'actions': [('move',assx ,assy,dir),('move',assx ,assy,dir)]}, separators=(',', ':'))
+                            return json.dumps({'actions': [('move',assx ,assy,dir),('move',assx ,assy-1,dir)]}, separators=(',', ':'))
 
 
                     if assx < kingx:
                         dir='S'
+
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -479,14 +495,15 @@ class KingAndAssassinsClient(game.GameClient):
                             personx=self.__actualpos['plebs'][person]['x']
                             persony=self.__actualpos['plebs'][person]['y']
 
-                            if personx==(assx+1) and persony==assy:
-                                return json.dumps({'actions': [('move',assx ,assy,'E'),('move',assx ,assy,dir)]}, separators=(',', ':'))
+                            if personx==assx+1 and persony==assy:
+                                return json.dumps({'actions': [('move',assx ,assy,'E'),('move',assx+1 ,assy,dir)]}, separators=(',', ':'))
 
 
                         else:
                             return json.dumps({'actions': [('move',assx ,assy,dir),('move',assx+1 ,assy,dir)]}, separators=(',', ':'))
                     if assx >kingx:
                         dir='N'
+
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -508,7 +525,7 @@ class KingAndAssassinsClient(game.GameClient):
                             persony=self.__actualpos['plebs'][person]['y']
 
                             if personx==(assx-1) and persony==assy:
-                                return json.dumps({'actions': [('move',assx ,assy,'W'),('move',assx ,assy,dir)]}, separators=(',', ':'))
+                                return json.dumps({'actions': [('move',assx ,assy,'W'),('move',assx-1 ,assy,dir)]}, separators=(',', ':'))
 
 
                         else:
@@ -551,13 +568,15 @@ class KingAndAssassinsClient(game.GameClient):
                 knight6y=self.__actualpos['knights']['knight6']['y']
                 knight7x=self.__actualpos['knights']['knight7']['x']
                 knight7y=self.__actualpos['knights']['knight7']['y']
+                print(self.__actualpos)
 
                 if kingx>8 and kingy>8:
 
-                    return json.dumps({'actions': [('move',knight7x ,knight7y,'W'),('move',kingx ,kingy,'W'),('move',knight3x ,knight3y,'N'),('move',knight5x ,knight5y,'N'),('move',kingx ,kingy-1,'N'),('move',knight7x ,knight7y-1,'E')]}, separators=(',', ':'))
+                    return json.dumps({'actions': [('move',knight1x,knight1y,'W'),('move',knight7x ,knight7y,'W'),('move',kingx ,kingy,'W'),('move',knight3x ,knight3y,'N'),('move',knight5x ,knight5y,'N'),('move',kingx ,kingy-1,'N'),('move',knight7x ,knight7y-1,'E')]}, separators=(',', ':'))
                 else:
                     if (kingy) < 2:
                         dir='E'
+                        move=[]
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -567,28 +586,30 @@ class KingAndAssassinsClient(game.GameClient):
                                 if knightx==villx and knighty+1==villy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    return json.dumps({'actions': [('arrest',knightx,knighty,dir),('move',knight6x ,knight6y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight5x ,knight5y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                    move.append(('arrest',knightx,knighty,dir))
+                                    break
                                 if kingx==villx and kingy+1==villy:
                                     ndir='N'
-                                    return json.dumps({'actions': [('move',kingx ,kingy,ndir),('move',kingx ,kingy,dir)]}, separators=(',', ':'))
-
+                                    return json.dumps({'actions':[('move',kingx,kingy,ndir),('move',kingx,kingy+1,dir)]}, separators=(',', ':'))
                             for assassin in self.__actualpos['assassins']:
                                 assx=self.__actualpos['assassins'][assassin]['x']
                                 assxy=self.__actualpos['assassins'][assassin]['y']
                                 if knightx==assx and knighty+1==assy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    return json.dumps({'actions': [('kill',knightx,knighty,dir),('move',knight6x ,knight6y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight5x ,knight5y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                    move.append(('kill',knightx,knighty,dir))
+                        if state['people'][kingx][kingy+1]=='knight':
+                            move.append(('move',kingx,kingy+1,dir))
+                        move.append(('move',kingx,kingy,dir))
+                        for knight in self.__actualpos['knights']:
+                            if self.__actualpos['knights'][knight]['x']!=kingx and self.__actualpos['knights'][knight]['y']!=kingy+1:
 
-
-
-
-
-                        return json.dumps({'actions': [('move',knight6x ,knight6y,dir),('move',kingx,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight5x ,knight5y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
-
+                                move.append(('move',self.__actualpos['knights'][knight]['x'],self.__actualpos['knights'][knight]['y'],dir))
+                        return json.dumps({'actions': move}, separators=(',', ':'))
 
                     if kingy > 2:
                         dir='W'
+                        move=[]
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -598,29 +619,38 @@ class KingAndAssassinsClient(game.GameClient):
                                 if knightx==villx and knighty-1==villy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    print('try to arrest',villager,'by',knightx,knighty)
-
-                                    return json.dumps({'actions': [('arrest',knightx,knighty,dir),('move',knight5x ,knight5y,dir),('move',kingx ,kingy,dir),('move',knight4x ,knight4y,dir),('move',knight3x ,knight3y,dir),('move',knight6x ,knight6y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                    move.append(('arrest',knightx,knighty,dir))
+                                    break
                                 if kingx==villx and kingy-1==villy:
                                     ndir='N'
-                                    return json.dumps({'actions': [('move',kingx ,kingy,ndir),('move',kingx ,kingy,dir)]}, separators=(',', ':'))
-
+                                    return json.dumps({'actions':[('move',kingx,kingy,ndir),('move',kingx,kingy-1,dir)]}, separators=(',', ':'))
                             for assassin in self.__actualpos['assassins']:
                                 assx=self.__actualpos['assassins'][assassin]['x']
                                 assxy=self.__actualpos['assassins'][assassin]['y']
                                 if knightx==assx and knighty-1==assy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    return json.dumps({'actions': [('kill',knightx,knighty,dir),('move',knight5x ,knight5y,dir),('move',kingx ,kingy,dir),('move',knight4x ,knight4y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight6x ,knight6y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                    move.append(('kill',knightx,knighty,dir))
+                        if state['people'][kingx][kingy-1]=='knight':
+                            move.append(('move',kingx,kingy-1,dir))
+                        move.append(('move',kingx,kingy,dir))
+                        for knight in self.__actualpos['knights']:
+
+                            if self.__actualpos['knights'][knight]['x']!=kingx and self.__actualpos['knights'][knight]['y']!=kingy-1:
+
+                                move.append(('move',self.__actualpos['knights'][knight]['x'],self.__actualpos['knights'][knight]['y'],dir))
+                        x=len(move)
+                        move.pop()
+                        return json.dumps({'actions': move}, separators=(',', ':'))
 
 
 
 
-                        return json.dumps({'actions': [('move',knight5x ,knight5y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight6x ,knight6y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
 
 
 
                     if kingx < 2:
+                        move=[]
                         dir='S'
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
@@ -631,25 +661,29 @@ class KingAndAssassinsClient(game.GameClient):
                                 if knightx+1==villx and knighty==villy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    return json.dumps({'actions': [('arrest',knightx,knighty,dir),('move',knight7x ,knight7y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight5x ,knight5y,dir),('move',knight6x ,knight6y,dir)]}, separators=(',', ':'))
+                                    move.append(('arrest',knightx,knighty,dir))
+                                    break
                                 if kingx+1==villx and kingy==villy:
                                     ndir='E'
-                                    return json.dumps({'actions': [('move',kingx ,kingy,ndir),('move',kingx ,kingy,dir)]}, separators=(',', ':'))
-
+                                    return json.dumps({'actions':[('move',kingx,kingy,ndir),('move',kingx+1,kingy,dir)]}, separators=(',', ':'))
                             for assassin in self.__actualpos['assassins']:
                                 assx=self.__actualpos['assassins'][assassin]['x']
                                 assxy=self.__actualpos['assassins'][assassin]['y']
                                 if knightx+1==assx and knighty==assy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    return json.dumps({'actions': [('kill',knightx,knighty,dir),('move',knight7x ,knight7y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight5x ,knight5y,dir),('move',knight6x ,knight6y,dir)]}, separators=(',', ':'))
+                                    move.append(('kill',knightx,knighty,dir))
 
+                        if state['people'][kingx+1][kingy]=='knight':
+                            move.append(('move',kingx+1,kingy,dir))
+                        move.append(('move',kingx,kingy,dir))
+                        for knight in self.__actualpos['knights']:
+                            if self.__actualpos['knights'][knight]['x']!=kingx+1 and self.__actualpos['knights'][knight]['y']!=kingy:
 
-
-
-                        return json.dumps({'actions': [('move',knight7x ,knight7y,dir),('move',kingx ,kingy,dir),('move',knight3x ,knight3y,dir),('move',knight4x ,knight4y,dir),('move',knight5x ,knight5y,dir),('move',knight6x ,knight6y,dir)]}, separators=(',', ':'))
-
+                                move.append(('move',self.__actualpos['knights'][knight]['x'],self.__actualpos['knights'][knight]['y'],dir))
+                        return json.dumps({'actions': move}, separators=(',', ':'))
                     if kingx >2:
+                        move=[]
                         dir='N'
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
@@ -660,24 +694,27 @@ class KingAndAssassinsClient(game.GameClient):
                                 if knightx-1==villx and knighty==villy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    print('try to arrest ',villx,villy,'by',knightx,knighty)
-                                    return json.dumps({'actions': [('arrest',knightx,knighty,dir),('move',knight3x ,knight3y,dir),('move',knight5x ,knight5y,dir),('move',knight4x ,knight4y,dir),('move',kingx,kingy,dir),('move',knight6x ,knight6y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                    print('popped',villager)
+                                    move.append(('arrest',knightx,knighty,dir))
+                                    break
                                 if kingx-1==villx and kingy==villy:
                                     ndir='E'
-                                    return json.dumps({'actions': [('move',kingx ,kingy,ndir),('move',kingx ,kingy,dir)]}, separators=(',', ':'))
-
+                                    return json.dumps({'actions':[('move',kingx,kingy,ndir),('move',kingx,kingy+1,dir)]}, separators=(',', ':'))
                             for assassin in self.__actualpos['assassins']:
                                 assx=self.__actualpos['assassins'][assassin]['x']
                                 assxy=self.__actualpos['assassins'][assassin]['y']
                                 if knightx-1==assx and knighty==assy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
-                                    return json.dumps({'actions': [('kill',knightx,knighty,dir),('move',knight3x ,knight3y,dir),('move',knight5x ,knight5y,dir),('move',kingx ,kingy,dir),('move',knight4x ,knight4y,dir),('move',knight6x ,knight6y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                    move.append(('kill',knightx,knighty,dir))
+                        if state['people'][kingx-1][kingy]=='knight':
+                            move.append(('move',kingx-1,kingy,dir))
+                        move.append(('move',kingx,kingy,dir))
+                        for knight in self.__actualpos['knights']:
+                            if self.__actualpos['knights'][knight]['x']!=kingx-1 and self.__actualpos['knights'][knight]['y']!=kingy:
 
-
-
-
-                        return json.dumps({'actions': [('move',knight3x ,knight3y,dir),('move',knight5x ,knight5y,dir),('move',kingx ,kingy,dir),('move',knight4x ,knight4y,dir),('move',knight6x ,knight6y,dir),('move',knight7x ,knight7y,dir)]}, separators=(',', ':'))
+                                move.append(('move',self.__actualpos['knights'][knight]['x'],self.__actualpos['knights'][knight]['y'],dir))
+                        return json.dumps({'actions': move}, separators=(',', ':'))
 
             else:
                 return json.dumps({'actions': []}, separators=(',', ':'))
