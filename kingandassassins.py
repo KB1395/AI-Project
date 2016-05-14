@@ -11,7 +11,6 @@ import socket
 import sys
 
 from lib import game
-from moveknights import *
 BUFFER_SIZE = 2048
 
 CARDS = (
@@ -331,7 +330,7 @@ class KingAndAssassinsClient(game.GameClient):
         #   ('attack', x, y, dir): attacks the king in direction dir with assassin at position (x, y)
         #   ('reveal', x, y): reveals villager at position (x,y) as an assassin
         state = state._state['visible']
-
+        #defines the assasins with their position instead of their name
         if state['card'] is None:
             if self._playernb==0:
                 ass1 = state['people'][2][1]
@@ -339,14 +338,16 @@ class KingAndAssassinsClient(game.GameClient):
                 ass3 = state['people'][7][5]
                 self.assassins_list = [ass1, ass2, ass3]
                 ikn=1
+                #creation of a dictionnary that updates the pos of every piece, before the start
                 for i in range(10):
                     for j in range(10):
+                        #king key
                         if state['people'][i][j] == 'king':
                             self.__actualpos['king'] = dict()
                             self.__actualpos['king']['x'] = i
                             self.__actualpos['king']['y'] = j
 
-
+                        #ordering the knights
                         if state['people'][i][j] == 'knight':
 
                             self.__actualpos['knights']['knight' + str(ikn)] = dict()
@@ -365,7 +366,7 @@ class KingAndAssassinsClient(game.GameClient):
 
                 iass = 1
                 ikn = 1
-
+                #creation of a dictionnary that updates the pos of every piece, every turn
                 for i in range(10):
                     for j in range(10):
 
@@ -392,21 +393,23 @@ class KingAndAssassinsClient(game.GameClient):
                                 self.__actualpos['plebs'][state['people'][i][j]] = dict()
                                 self.__actualpos['plebs'][state['people'][i][j]]['x'] = i
                                 self.__actualpos['plebs'][state['people'][i][j]]['y'] = j
-                print(self.__actualpos)
+
                 for assassin in self.__actualpos['assassins']:
                     assx=self.__actualpos['assassins'][assassin]['x']
                     assy=(self.__actualpos['assassins'][assassin]['y'])
                     kingx= self.__actualpos['king']['x']
                     kingy= self.__actualpos['king']['y']
-                    print('position of ',assassin, 'is',assx, assy)
+                    #For every direction the output changes
 
                     if (assy) < kingy:
                         dir='E'
+                        #i put the dictionnary again to tryy to fix the "ghost pawns bug"
                         for i in range(10):
                             for j in range(10):
                                 if state['people'][i][j] in self.assassins_list or state['people'][i][j]=='assassin':
 
                                     self.__actualpos['assassins']['assassin'+str(iass)] = dict()
+
                                     self.__actualpos['assassins']['assassin' + str(iass)]['x'] = i
                                     self.__actualpos['assassins']['assassin' + str(iass)]['y'] = j
                                     iass += 1
@@ -420,17 +423,20 @@ class KingAndAssassinsClient(game.GameClient):
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
 
-
+                            #checks if any knight is in the assassin's kill radius in the direction where the assassin's headed
                             if knightx==(assx) and knighty==assy+1:
                                 print('killed the knight in',knightx,knighty)
                                 state['people'][knightx][knighty] = None
                                 self.__actualpos['knights'].pop(knight,None)
                                 return json.dumps({'actions': [('reveal',assx,assy),('kill',assx ,assy,dir)]}, separators=(',', ':'))
+                                #cheks if the king is in the kill radius
                         if kingx==assx and kingy==assy+1 and state['people'][assx][assy]!='assassin':
+                            #if the assassin's still hidden
                             return json.dumps({'actions': [('reveal',assx,assy),('attack',assx ,assy,dir)]}, separators=(',', ':'))
+                            #if the assassin has already been revealed
                         if kingx==assx and kingy==assy+1 and state['people'][assx][assy]=='assassin':
                             return json.dumps({'actions': [('attack',assx ,assy,dir)]}, separators=(',', ':'))
-
+                            #checks if any person blocks the path of the assassin
                         for person in self.__actualpos['plebs']:
                             personx=self.__actualpos['plebs'][person]['x']
                             persony=self.__actualpos['plebs'][person]['y']
@@ -443,6 +449,7 @@ class KingAndAssassinsClient(game.GameClient):
                             return json.dumps({'actions': [('move',assx ,assy,dir),('move',assx ,assy+1,dir)]}, separators=(',', ':'))
 
                     if assy >kingx:
+                        #same as east
                         dir='W'
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
@@ -475,7 +482,7 @@ class KingAndAssassinsClient(game.GameClient):
 
                     if assx < kingx:
                         dir='S'
-
+                        #same as east
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -503,7 +510,7 @@ class KingAndAssassinsClient(game.GameClient):
                             return json.dumps({'actions': [('move',assx ,assy,dir),('move',assx+1 ,assy,dir)]}, separators=(',', ':'))
                     if assx >kingx:
                         dir='N'
-
+                        #same as east
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -552,6 +559,7 @@ class KingAndAssassinsClient(game.GameClient):
                                 self.__actualpos['plebs'][state['people'][i][j]] = dict()
                                 self.__actualpos['plebs'][state['people'][i][j]]['x'] = i
                                 self.__actualpos['plebs'][state['people'][i][j]]['y'] = j
+                #identify the various knights
                 kingx=self.__actualpos['king']['x']
                 kingy=self.__actualpos['king']['y']
                 knight1x=self.__actualpos['knights']['knight1']['x']
@@ -568,13 +576,13 @@ class KingAndAssassinsClient(game.GameClient):
                 knight6y=self.__actualpos['knights']['knight6']['y']
                 knight7x=self.__actualpos['knights']['knight7']['x']
                 knight7y=self.__actualpos['knights']['knight7']['y']
-                print(self.__actualpos)
 
                 if kingx>8 and kingy>8:
-
+                    #for the first turn, the king goes between the knights to be secured
                     return json.dumps({'actions': [('move',knight1x,knight1y,'W'),('move',knight7x ,knight7y,'W'),('move',kingx ,kingy,'W'),('move',knight3x ,knight3y,'N'),('move',knight5x ,knight5y,'N'),('move',kingx ,kingy-1,'N'),('move',knight7x ,knight7y-1,'E')]}, separators=(',', ':'))
                 else:
                     if (kingy) < 2:
+                        #the IA for the king is just based on targetting the door i (2,2) and the knights follow the king
                         dir='E'
                         move=[]
                         for knight in self.__actualpos['knights']:
@@ -583,15 +591,18 @@ class KingAndAssassinsClient(game.GameClient):
                             for villager in self.__actualpos['plebs']:
                                 villx=self.__actualpos['plebs'][villager]['x']
                                 villy=self.__actualpos['plebs'][villager]['y']
+                                #arrests any villager on the way to the door
                                 if knightx==villx and knighty+1==villy:
                                     state['people'][villx][villy] = None
                                     self.__actualpos['plebs'].pop(villager,None)
                                     move.append(('arrest',knightx,knighty,dir))
                                     break
                                 if kingx==villx and kingy+1==villy:
+                                    #manoeuver to avoid the blocking innocent villagers
                                     ndir='N'
                                     return json.dumps({'actions':[('move',kingx,kingy,ndir),('move',kingx,kingy+1,dir)]}, separators=(',', ':'))
                             for assassin in self.__actualpos['assassins']:
+                                #detects and kills the assassin
                                 assx=self.__actualpos['assassins'][assassin]['x']
                                 assxy=self.__actualpos['assassins'][assassin]['y']
                                 if knightx==assx and knighty+1==assy:
@@ -599,16 +610,20 @@ class KingAndAssassinsClient(game.GameClient):
                                     self.__actualpos['plebs'].pop(villager,None)
                                     move.append(('kill',knightx,knighty,dir))
                         if state['people'][kingx][kingy+1]=='knight':
+                            #moves the knight that is in front of the king (according the direction)
                             move.append(('move',kingx,kingy+1,dir))
+                        #moves the king
                         move.append(('move',kingx,kingy,dir))
                         for knight in self.__actualpos['knights']:
+                            #moves every other knight (except the two top useless ones)
                             if self.__actualpos['knights'][knight]['x']!=kingx and self.__actualpos['knights'][knight]['y']!=kingy+1:
-
+                                #this is to avoid to move two times the blocking knight
                                 move.append(('move',self.__actualpos['knights'][knight]['x'],self.__actualpos['knights'][knight]['y'],dir))
                         return json.dumps({'actions': move}, separators=(',', ':'))
 
                     if kingy > 2:
                         dir='W'
+                        #same as east
                         move=[]
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
@@ -652,6 +667,7 @@ class KingAndAssassinsClient(game.GameClient):
                     if kingx < 2:
                         move=[]
                         dir='S'
+                        #same as east
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
@@ -685,6 +701,7 @@ class KingAndAssassinsClient(game.GameClient):
                     if kingx >2:
                         move=[]
                         dir='N'
+                        #same as east
                         for knight in self.__actualpos['knights']:
                             knightx=self.__actualpos['knights'][knight]['x']
                             knighty=self.__actualpos['knights'][knight]['y']
